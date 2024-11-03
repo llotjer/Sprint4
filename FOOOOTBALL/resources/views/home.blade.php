@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Home</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
@@ -90,15 +91,22 @@
         const mainTitle = document.getElementById('main-title');
         const content = document.getElementById('content');
         const hoverText = document.getElementById('hover-text');
-        const fetchMenuUrl = "{{ route('fetch_menu') }}";
+        const fetchMenuUrl = "{{ route('fetch.menu') }}";
 
-        let isDropdownHovered = false; // Variable per controlar l'estat de hover
+        let isDropdownHovered = false;
+
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
 
         buttons.forEach(button => {
 
             button.addEventListener('mouseenter', (event) => {
 
                 const type = event.target.getAttribute('data-type');
+                /* console.log(type); */
                 const buttonColor = window.getComputedStyle(event.target).backgroundColor;
 
                 // Actualitza el text i mostra'l a prop de `#main-title`
@@ -129,19 +137,17 @@
                     type: 'GET',
                     data: { type: type }, // Passa el tipus d'acció al backend
                     success: function(response) {
-                        if (response && response.html) { // Comprova si la resposta té l'atribut 'html'
-                            dropdown.innerHTML = response.html; // Actualitza el contingut del desplegable
-                            dropdown.classList.add('show'); // Mostra el desplegable
-                            mainTitle.classList.add('move-up'); // Mou cap amunt el títol
-                            console.log(response);
-                        } else {
-                            console.log(type);
-                            console.error('No hi ha contingut HTML a la resposta.');
-                        }
+                        console.log('Resposta completa:', response);
+                        dropdown.innerHTML = response.html; // Actualitza el contingut del desplegable
+                        dropdown.classList.add('show'); // Mostra el desplegable
+                        mainTitle.classList.add('move-up'); // Mou cap amunt el títol
                     },
                     error: function(xhr, status, error) {
+                        dropdown.innerHTML = '<p style="color:red;">Error carregant el contingut.</p>';
                         console.error('Error en la sol·licitud AJAX:', error);
+                        console.log('Detalls de l\'error:', xhr.responseText); // Mostra el missatge complet
                     }
+
                 });
             });
         });
@@ -151,25 +157,20 @@
             isDropdownHovered = true;
         };
 
-        const handleMouseLeave = () => {
-            isDropdownHovered = false;
-            // Retard per assegurar-se que el ratolí no ha entrat en un altre element abans de tancar
-            setTimeout(() => {
-                if (!isDropdownHovered) {
-                    dropdown.classList.remove('show');
-                    mainTitle.classList.remove('move-up');
-                    console.log("S'ha tancat el desplegable perquè el ratolí ha sortit.");
-                }
-            }, 100);
-        };
+        document.addEventListener('click', function(event) {
+            const isClickInside = dropdown.contains(event.target) || mainTitle.contains(event.target);
+            
+            if (!isClickInside) {
+                dropdown.classList.remove('show');
+                mainTitle.classList.remove('move-up');
+                console.log("S'ha tancat el desplegable perquè s'ha clicat fora.");
+            }
+        });
 
         // Afegeix `mouseenter` i `mouseleave` als elements
         dropdown.addEventListener('mouseenter', handleMouseEnter);
-        dropdown.addEventListener('mouseleave', handleMouseLeave);
         mainTitle.addEventListener('mouseenter', handleMouseEnter);
-        mainTitle.addEventListener('mouseleave', handleMouseLeave);
         content.addEventListener('mouseenter', handleMouseEnter);
-        content.addEventListener('mouseleave', handleMouseLeave);
 
         // Opcionalment, netejar el sessionStorage al sortir de la pàgina o refrescar
         window.addEventListener('beforeunload', () => {
