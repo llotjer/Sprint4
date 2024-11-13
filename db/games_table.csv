@@ -1,0 +1,8 @@
+Field,Type,Null,Key,Default,Extra
+id,"bigint(20) unsigned",NO,PRI,NULL,auto_increment
+home_team_id,"bigint(20) unsigned",NO,MUL,NULL,
+away_team_id,"bigint(20) unsigned",NO,MUL,NULL,
+game_date,datetime,NO,,NULL,
+location,varchar(25),NO,MUL,NULL,
+created_at,timestamp,YES,,NULL,
+updated_at,timestamp,YES,,NULL,

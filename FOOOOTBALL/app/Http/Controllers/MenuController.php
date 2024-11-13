@@ -14,11 +14,13 @@ class MenuController extends Controller{
         $dataType = $request->query('type');
     
         if (in_array($dataType, ['new', 'view', 'update', 'delete'])) {
-            // Carrega la vista com a string HTML utilitzant `view()` i `->render()`
+            
             $html = view("menus.$dataType", compact('teams', 'games'))->render();
     
-            return response()->json(['html' => $html]); // Retorna l'HTML en format JSON
+            return response()->json(['html' => $html]);
+
         } else {
+            
             return response()->json(['html' => '<p>Contingut no disponible.</p>']);
         }
     }

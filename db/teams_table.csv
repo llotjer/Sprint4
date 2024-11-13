@@ -1,0 +1,7 @@
+Field,Type,Null,Key,Default,Extra
+id,"bigint(20) unsigned",NO,PRI,NULL,auto_increment
+created_at,timestamp,YES,,NULL,
+updated_at,timestamp,YES,,NULL,
+name,tinytext,NO,,NULL,
+type,"enum('school','club')",NO,,NULL,
+location,varchar(25),NO,UNI,NULL,
