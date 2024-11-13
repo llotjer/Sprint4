@@ -128,7 +128,7 @@ class GameController extends Controller{
 
         try {
     
-        $game = GAme::findOrFail($id);
+        $game = Game::findOrFail($id);
 
         $html =  view('game.viewDeleteGame', compact('game'))->render();
 

@@ -22,6 +22,7 @@ class Game extends Model{
     }
 
     public function getFormattedDateAttribute() { //accesor
+        
         return \Carbon\Carbon::parse($this->game_date)->format('d/m/Y');
     }
 
