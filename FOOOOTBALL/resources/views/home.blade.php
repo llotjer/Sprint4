@@ -50,6 +50,9 @@
             transition: opacity 0.5s ease-in-out, height 0.5s ease-in-out, top 0.5s ease-in-out, background 0.5s ease-in-out; /* Aquí s'afegeix la transició de color de fons */
             z-index: 10; /* Assegura que el desplegable es mostri per sobre */
         }
+        .hover-scale-big:hover {
+        transform: scale(3); /* Escala el botó 3 vegades més gran */
+        }
     </style>
 </head>
 <body class="flex flex-col justify-center items-center bg-gray-100 dark:bg-gray-800">
@@ -60,20 +63,12 @@
                 <h1 id="main-title" class="flex items-center scale-150 leading-relaxed transition-transform duration-200 mx-8">
                     <span class="mr-2">F</span>
                     <div class="relative mx-4">
-                        <button type="button" class="w-4 h-4 bg-yellow-400 rounded-full transform hover:scale-150 transition-transform duration-200 outline-none desplegable-btn" 
-                        data-type="new"></button>
+                        <button type="button" class="w-4 h-4 bg-yellow-400 rounded-full transform hover:scale-150 transition-transform duration-200 outline-none 
+                        desplegable-btn" data-name="new" data-type="new"></button>
                     </div>
                     <div class="relative mx-4">
-                        <button type="button" class="w-4 h-4 bg-green-400 rounded-full transform hover:scale-150 transition-transform duration-200 outline-none desplegable-btn" 
-                        data-type="view"></button>
-                    </div>
-                    <div class="relative mx-3">
-                        <button type="button" class="w-4 h-4 bg-blue-400 rounded-full transform hover:scale-150 transition-transform duration-200 outline-none desplegable-btn" 
-                        data-type="update"></button>
-                    </div>
-                    <div class="relative mx-4">
-                        <button type="button" class="w-4 h-4 bg-red-400 rounded-full transform hover:scale-150 transition-transform duration-200 outline-none desplegable-btn" 
-                        data-type="delete"></button>
+                        <button type="button" class="w-4 h-4 bg-green-400 rounded-full transform hover:scale-150 transition-transform duration-200 outline-none 
+                        desplegable-btn" data-name="view" data-type="view"></button>
                     </div>
                     TBALL
                 </h1>
@@ -84,10 +79,9 @@
 
     </main>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Assegura't que jQuery està carregat -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         const dropdown = document.getElementById('global-dropdown');
-        const buttons = document.querySelectorAll('.desplegable-btn');
         const mainTitle = document.getElementById('main-title');
         const content = document.getElementById('content');
         const hoverText = document.getElementById('hover-text');
@@ -95,60 +89,121 @@
 
         let isDropdownHovered = false;
 
+        // Configuració global d'AJAX per incloure el CSRF Token
         $.ajaxSetup({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
 
-        buttons.forEach(button => {
+        // Utilitzant event delegation per a botons dinàmics (si afegeixes més botons dinàmics més tard)
+        $(document).on('mouseenter', '.desplegable-btn', function(event) {
+            const name = $(this).data('name');
+            const buttonColor = window.getComputedStyle(this).backgroundColor;
 
-            button.addEventListener('mouseenter', (event) => {
+            // Actualitzem el text al costat del títol principal
+            hoverText.textContent = `${name}`.toUpperCase();
+            hoverText.style.display = 'block';
+            hoverText.style.color = buttonColor; // Aplica el color del botó
+            hoverText.style.top = `${mainTitle.getBoundingClientRect().top - 30}px`; // Just a sobre de `main-title`
+            hoverText.style.left = '50%';
+            hoverText.style.transform = 'translateX(-50%)';
+        });
 
-                const type = event.target.getAttribute('data-type');
-                /* console.log(type); */
-                const buttonColor = window.getComputedStyle(event.target).backgroundColor;
+        // Ocultem el text en fer `mouseleave`
+        $(document).on('mouseleave', '.desplegable-btn', function() {
+            hoverText.style.display = 'none';
+        });
 
-                // Actualitza el text i mostra'l a prop de `#main-title`
-                hoverText.textContent = `${type}`.toUpperCase();
-                hoverText.style.display = 'block';
-                hoverText.style.color = buttonColor; // Aplica el color del botó
-                hoverText.style.top = `${mainTitle.getBoundingClientRect().top - 30}px`; // Just a sobre de `main-title`
-                hoverText.style.left = '50%';
-                hoverText.style.transform = 'translateX(-50%)';
+        // Event per al click dels botons per carregar el contingut del menú via AJAX
+        $(document).on('click', '.desplegable-btn', function(event) {
+            const type = $(this).data('type');
+            console.log('Tipus seleccionat:', type); // Afegeix un log per verificar el valor
+
+            if (!type) {
+                console.error('data-type no està definit per aquest botó');
+                return; // Evita enviar la petició si no hi ha tipus
+            }
+
+            // Neteja el contingut anterior del desplegable
+            dropdown.innerHTML = '';
+
+            console.log('Enviament de la petició AJAX:', { type: type });
+
+            // Petició AJAX per carregar el menú corresponent
+            $.ajax({
+                url: fetchMenuUrl, // Ruta definida a Laravel
+                type: 'GET',
+                data: { type: type }, // Passa el tipus d'acció al backend
+                success: function(response) {
+                    console.log('Resposta completa:', response);
+                    dropdown.innerHTML = response.html; // Actualitza el contingut del desplegable
+                    dropdown.classList.add('show'); // Mostra el desplegable
+                    mainTitle.classList.add('move-up'); // Mou cap amunt el títol
+                },
+                error: function(xhr, status, error) {
+                    dropdown.innerHTML = '<p style="color:red;">Error carregant el contingut.</p>';
+                    console.error('Error en la sol·licitud AJAX:', error);
+                    console.log('Detalls de l\'error:', xhr.responseText); // Mostra el missatge complet
+                }
             });
+        });
 
-            // Oculta el text en fer `mouseleave`
-            button.addEventListener('mouseleave', () => {
-                hoverText.style.display = 'none';
+        
+        $(document).on('submit', '#newTeam, #newGame, #updateTeam, #updateGame, #deleteTeam, #deleteGame', function(e) {
+            e.preventDefault();
+            // Petició AJAX per a creació de nous equips i partits
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    console.log(response.html);
+                    // Injecta la resposta al contenidor desplegable
+                    $('#dropdown-content').html(response.html);
+                },
+                error: function(xhr) {
+                    alert('Hi ha hagut un error en la creació.');
+                }
             });
+        });
 
-            button.addEventListener('click', (event) => {
-                const type = event.target.getAttribute('data-type');
+        // Petició AJAX per altres enllaços d'equips i partits
+        $(document).on('click', '.viewTeam, .viewTeamUpdate, .viewTeamDelete, .viewGame, .viewGameUpdate, .viewGameDelete', function (e) { 
+            e.preventDefault();
 
-                // Neteja el contingut anterior del desplegable
-                dropdown.innerHTML = '';
+            console.log('Botó clicat');
 
-                console.log('Enviament de la petició AJAX:', { type: type });
+            const id = $(this).data('id');
 
-                // Petició AJAX per carregar el menú corresponent
-                $.ajax({
-                    url: '/fetch-menu', // Ruta definida a Laravel
-                    type: 'GET',
-                    data: { type: type }, // Passa el tipus d'acció al backend
-                    success: function(response) {
-                        console.log('Resposta completa:', response);
-                        dropdown.innerHTML = response.html; // Actualitza el contingut del desplegable
-                        dropdown.classList.add('show'); // Mostra el desplegable
-                        mainTitle.classList.add('move-up'); // Mou cap amunt el títol
-                    },
-                    error: function(xhr, status, error) {
-                        dropdown.innerHTML = '<p style="color:red;">Error carregant el contingut.</p>';
-                        console.error('Error en la sol·licitud AJAX:', error);
-                        console.log('Detalls de l\'error:', xhr.responseText); // Mostra el missatge complet
-                    }
+            console.log('ID capturat:', id);
 
-                });
+            let url;
+            if ($(this).hasClass('viewTeam')) { // Rutes per al TeamController
+                url = `/team/${id}`; 
+            } else if ($(this).hasClass('viewTeamUpdate')) {
+                url = `/viewUpdateTeam/${id}`; 
+            } else if ($(this).hasClass('viewTeamDelete')) {
+                url = `/viewDeleteTeam/${id}`;
+
+            } else if ($(this).hasClass('viewGame')) { // Rutes per al GameController
+                url = `/game/${id}`; 
+            } else if ($(this).hasClass('viewGameUpdate')) {
+                url = `/viewUpdateGame/${id}`;
+            } else if ($(this).hasClass('viewGameDelete')) {
+                url = `/viewDeleteGame/${id}`;
+            }
+
+            $.ajax({
+                url: url, // Ruta cap al controlador corresponent
+                type: 'GET',
+                success: function(response) {
+                    //console.log(response.html);
+                    $('#dropdown-content').html(response.html); // Actualitza el contingut amb la resposta
+                },
+                error: function() {
+                    $('#dropdown-content').html('<p style="color:red;">Error en carregar la informació.</p>');
+                }
             });
         });
 
