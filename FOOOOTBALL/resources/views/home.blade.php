@@ -163,7 +163,7 @@
                     $('#dropdown-content').html(response.html);
                 },
                 error: function(xhr) {
-                    alert('Hi ha hagut un error en la creació.');
+                    alert('Hi ha hagut un error al realitzar l\'acció.');
                 }
             });
         });
